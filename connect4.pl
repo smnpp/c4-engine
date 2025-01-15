@@ -34,12 +34,12 @@ M - a mark ('x' or 'o')
 
 convention outputboard 
   1   2   3   4   5   6   7
-|   |   |   |   |   |   |   | 6
-|   |   |   |   |   |   |   | 5 
-|   |   |   |   |   |   |   | 4
+|   |   |   |   |   |   |   | 1
+|   |   |   |   |   |   |   | 2 
 |   |   |   |   |   |   |   | 3
-|   |   |   | X |   |   |   | 2
-|   |   |   | O |   |   |   | 1
+|   |   |   |   |   |   |   | 4
+|   |   |   | X |   |   |   | 5
+|   |   |   | O |   |   |   | 6
 
 Variables with a numeric suffix represent a variable based on another variable.
 (e.g. B2 is a new board position based on B)
@@ -275,9 +275,33 @@ win(B, P) :-
 %.......................................
 % move
 %.......................................
-% applies a move on the given board
-% (put mark M in square S on board B and return the resulting board B2)
-%
+
+% move applique un coup en ajoutant un jeton dans une colonne donnée
+move(B, C, M, NB) :-
+    add_token(B, C, M, NB).
+
+
+% Ajoute un jeton dans la première case vide de la colonne C
+add_token(B, C, M, NB) :-
+    add_token_row(B, C, M, NB, 6).
+
+
+% Parcourt les lignes de bas en haut pour trouver la première case vide
+add_token_row(B, C, M, NB, R) :-
+    R > 0,
+    square(B, R, C, e), % Vérifie si la case est vide
+    update_square(B, R, C, M, NB). % Met à jour la case avec le jeton
+
+% Si la case nest pas vide, on passe à la ligne supérieure
+add_token_row(B, C, M, NB, R) :-
+    R > 0,
+    NR is R - 1,
+    add_token_row(B, C, M, NB, NR).
+
+% Si aucune case vide nest trouvée (colonne pleine)
+add_token_row(_, _, _, _, 0) :-
+    write('Erreur : La colonne est pleine.'), nl, fail.
+
 
 
 %.......................................
@@ -332,42 +356,32 @@ output_winner(_) :-
     write('No winner.')
     .
 
+% Affiche le plateau avec les numéros de lignes croissants (1 à 6)
 output_board(B) :-
     nl,
     write('  1   2   3   4   5   6   7'), nl,
     write('-----------------------------'), nl,
-    output_rows(B, 6),
+    output_rows(B, 1),  % Commence la numérotation des lignes à 1
     write('-----------------------------'), nl.
 
-output_rows(_, 0).
-
-output_rows([], RowNum):-
-    write('|'),
-    output_row(_, 7),
-    format(' ~d~n', [RowNum]), % Ajoute le numéro de la ligne
-    NewRowNum is RowNum - 1,
-    output_rows(_, NewRowNum).
-    
+% Affiche chaque ligne du plateau
+output_rows([], _). 
 output_rows([Row | Rest], RowNum) :-
     write('|'),
-    output_row(Row, 7),
-    format(' ~d~n', [RowNum]), % Ajoute le numéro de la ligne
-    NewRowNum is RowNum - 1,
-    output_rows(Rest, NewRowNum).
+    output_row(Row, 7),   
+    format(' ~d~n', [RowNum]), 
+    NewRowNum is RowNum + 1,  
+    output_rows(Rest, NewRowNum). 
 
-output_row(_, 0).
-
-output_row([], ColNum) :-
-    write('   |'),
-    NewColNum is ColNum - 1,
-    output_row([], NewColNum).
+% Affiche une ligne donnée
+output_row([], 0).  % Cas de base : aucune colonne restante dans la ligne
 
 output_row([E | Rest], ColNum) :-
-    output_cell(E),
-    NewColNum is ColNum - 1,
-    output_row(Rest, NewColNum).
+    output_cell(E), 
+    NewColNum is ColNum - 1,  
+    output_row(Rest, NewColNum). 
 
-
+% Affiche une cellule
 output_cell(E) :-
     format(' ~w |', [E]).
 
