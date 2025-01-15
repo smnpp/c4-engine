@@ -119,7 +119,7 @@ initialize :-
                     [E,E,E,E,E,E,E], 
                     [E,E,E,E,E,E,E], 
                     [E,E,E,E,E,E,E], 
-                    [E,E,E,E,E,E,E],
+                    [E,E,E,E,E,E,E]
                 ]
             )).
 
@@ -178,7 +178,7 @@ set_players(2) :-
     asserta( player(2, human) ), !
     .
 
-set_players(N) :-
+set_players(_) :-
     nl,
     write('Please enter 0, 1, or 2.'),
     read_players
@@ -197,7 +197,7 @@ human_playing(M) :-
     asserta( player(2, human) ), !
     .
 
-human_playing(M) :-
+human_playing(_) :-
     nl,
     write('Please enter X or O.'),
     set_players(1)
@@ -218,9 +218,20 @@ play(P) :-
 %.......................................
 % The mark in a square(N) corresponds to an item in a list, as follows:
 square(B, R, C, V) :-
-    Index is (R - 1) * 7 + C,
-    nth1(Index, B, V)
-    . 
+    nth1(R, B, L),     % Obtenir la ligne numéro Row
+    nth1(C, L, V).      % Obtenir la colonne numéro Col dans cette ligne
+
+
+% Remplace un élément dans une liste
+replace(L, I, V, NL) :-
+    nth1(I, L, _, TempL),             
+    nth1(I, NL, V, TempL).
+
+% Met à jour une square spécifique dans la grille
+update_square(B, R, C, V, NB) :-
+    nth1(R, B, L, RestB),           % Extraire la ligne à modifier
+    replace(L, C, V, NL),           % Modifier la colonne dans la ligne
+    nth1(R, NB, NL, RestB).         % Reconstruire le plateau
 
 %.......................................
 % win
@@ -317,7 +328,7 @@ output_winner(B) :-
     !
     .
 
-output_winner(B) :-
+output_winner(_) :-
     write('No winner.')
     .
 
@@ -328,23 +339,35 @@ output_board(B) :-
     output_rows(B, 6),
     write('-----------------------------'), nl.
 
-output_rows([], _).
+output_rows(_, 0).
+
+output_rows([], RowNum):-
+    write('|'),
+    output_row(_, 7),
+    format(' ~d~n', [RowNum]), % Ajoute le numéro de la ligne
+    NewRowNum is RowNum - 1,
+    output_rows(_, NewRowNum).
+    
 output_rows([Row | Rest], RowNum) :-
     write('|'),
-    output_row(Row),
+    output_row(Row, 7),
     format(' ~d~n', [RowNum]), % Ajoute le numéro de la ligne
     NewRowNum is RowNum - 1,
     output_rows(Rest, NewRowNum).
 
-output_row([]) :-
-    write('').
-output_row([E | Rest]) :-
-    output_cell(E),
-    output_row(Rest).
+output_row(_, 0).
 
-output_cell(E) :-
-    blank_mark(E), !,
-    write('   |').
+output_row([], ColNum) :-
+    write('   |'),
+    NewColNum is ColNum - 1,
+    output_row([], NewColNum).
+
+output_row([E | Rest], ColNum) :-
+    output_cell(E),
+    NewColNum is ColNum - 1,
+    output_row(Rest, NewColNum).
+
+
 output_cell(E) :-
     format(' ~w |', [E]).
 
@@ -366,7 +389,7 @@ output_square2(S, E) :-
     write(S), !              %%% if square is empty, output the square number
     .
 
-output_square2(S, M) :- 
+output_square2(_, M) :- 
     write(M), !              %%% if square is marked, output the mark
     .
 
@@ -379,6 +402,6 @@ output_value(D,S,U) :-
     write(U), !
     .
 
-output_value(D,S,U) :- 
+output_value(_,_,_) :- 
     true
     .
