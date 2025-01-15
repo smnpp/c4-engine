@@ -119,6 +119,14 @@ hello :-
 initialize :-
     random_seed,          %%% use current time to initialize random number generator
     blank_mark(E),
+    % Représenter la grille avec une liste de 42 éléments
+asserta(board([e,e,e,e,e,e,e,  % Ligne 1
+               e,e,e,e,e,e,e,  % Ligne 2
+               e,e,e,e,e,e,e,  % Ligne 3
+               e,e,e,e,e,e,e,  % Ligne 4
+               e,e,e,e,e,e,e,  % Ligne 5
+               e,e,e,e,e,e,e])). % Ligne 6
+
     asserta( board([E,E,E, E,E,E, E,E,E]) )  %%% create a blank board
     .
 
