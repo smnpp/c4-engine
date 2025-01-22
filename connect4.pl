@@ -206,7 +206,6 @@ human_playing(_) :-
 play(P) :-
     board(B), !,
     output_board(B), !,
-    not(game_over(P, B)), !,
     make_move(P, B), !,
     next_player(P, P2), !,
     play(P2), !
@@ -238,40 +237,8 @@ update_square(B, R, C, V, NB) :-
 %.......................................
 % Players win by having their mark in one of the following square configurations:
 %
-/*
-win(B, P) :- 
-    between(1, 6, R),
-    between(1, 4, C),
-    square(B, R, C, P),
-    square(B, R, C + 1, P),
-    square(B, R, C + 2, P),
-    square(B, R, C + 3, P)
-    .
-win(B, P) :-
-    between(1, 3, R), 
-    between(1, 7, C),
-    square(B, R, C, P),
-    square(B, R + 1, C, P),
-    square(B, R + 2, C, P),
-    square(B, R + 3, C, P)
-    .
-win(B, P) :-
-    between(1, 3, R),
-    between(1, 4, C),
-    square(B, R, C, P),
-    square(B, R + 1, C + 1, P),
-    square(B, R + 2, C + 2, P),
-    square(B, R + 3, C + 3, P)
-	.
-win(B, P) :-
-    between(1, 3, R),
-    between(4, 7, C),
-    square(B, R, C, P),
-    square(B, R + 1, C - 1, P),
-    square(B, R + 2, C - 2, P),
-    square(B, R + 3, C - 3, P)
-	.
-*/
+
+
 %.......................................
 % move
 %.......................................
@@ -317,31 +284,40 @@ add_token_row(_, _, _, _, 0) :-
 % make_move(P, B, NB)
 % Gère le tour du joueur P et applique le coup au plateau B, renvoyant le nouveau plateau NB.
 
-make_move(P, B, NB) :-
-    player(P, Type),  % Détermine si le joueur est humain ou ordinateur
-    (Type = human -> request_move(P, B, NB) ; computer_move(P, B, NB)).
+make_move(P, B) :-
+    player(P, Type),
+    make_move2(Type, P, B, NB),
+    retract(board(_)),
+    asserta(board(NB)).
 
-% Demande au joueur humain de choisir une colonne et applique le coup
-request_move(P, B, NB) :-
+make_move2(human, P, B, NB) :-
+    human_move(P, B, NB).
+make_move2(computer, P, B, NB) :-
+    computer_move(P, B, NB).
+
+% Human move
+human_move(P, B, NB) :-
     nl, write('Player '), write(P), write(', choose a column (1-7): '), nl,
-    read(C),  % Lecture de l entrée utilisateur
-    valid_column(C),  % Vérifie si la colonne est valide
-    player_mark(P, M),  % Récupère le marqueur du joueur ('x' ou 'o')
-    (   move(B, C, M, NB)  % Tente de jouer dans la colonne choisie
-    ->  true
-    ;   write('Invalid move. Column is full or out of range.'), nl,
-        request_move(P, B, NB)  % Redemande si le coup est invalide
+    read(C),
+    (   valid_column(C)
+    ->  player_mark(P, M),
+        (   move(B, C, M, NB)
+        ->  true
+        ;   write('Invalid move. Column is full.'), nl,
+            human_move(P, B, NB)
+        )
+    ;   write('Invalid column. Choose between 1 and 7.'), nl,
+        human_move(P, B, NB)
     ).
 
-% Détermine le coup de l ordinateur et applique le coup
+% Computer move
 computer_move(P, B, NB) :-
     nl, write('Computer is thinking...'), nl,
     player_mark(P, M),
-    find_best_move(B, M, C),  % Trouve la meilleure colonne (implémenter `find_best_move`)
+    find_best_move(B, M, C),
     (   move(B, C, M, NB)
     ->  format('Computer plays in column ~w.~n', [C])
-    ;   write('Computer made an invalid move.') % Cas improbable
-    ).
+    ;   write('Computer made an invalid move.')).
 
 % Vérifie si une colonne est valide (entre 1 et 7)
 valid_column(C) :-
