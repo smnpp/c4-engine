@@ -236,7 +236,70 @@ update_square(B, R, C, V, NB) :-
 % win
 %.......................................
 % Players win by having their mark in one of the following square configurations:
-%
+% Vérifie une victoire horizontale
+win_horizontal(B, P) :- 
+    P \= e, 
+    between(1, 6, R),
+    between(1, 4, C),
+    square(B, R, C, P),
+    C1 is C + 1,
+    square(B, R, C1, P),
+    C2 is C + 2,
+    square(B, R, C2, P),
+    C3 is C + 3,
+    square(B, R, C3, P).
+
+
+% Vérifie une victoire verticale
+win_vertical(B, P) :-
+    P \= e,
+    between(1, 3, R), 
+    between(1, 7, C),
+    square(B, R, C, P),
+    R1 is R + 1,
+    square(B, R1, C, P),
+    R2 is R + 2,
+    square(B, R2, C, P),
+    R3 is R + 3,
+    square(B, R3, C, P).
+
+
+% Vérifie une victoire diagonale descendante
+win_diagonal_desc(B, P) :-
+    P \= e,
+    between(1, 3, R),
+    between(1, 4, C),
+    square(B, R, C, P),
+    R1 is R + 1, C1 is C + 1,
+    square(B, R1, C1, P),
+    R2 is R + 2, C2 is C + 2,
+    square(B, R2, C2, P),
+    R3 is R + 3, C3 is C + 3,
+    square(B, R3, C3, P).
+
+
+% Vérifie une victoire diagonale ascendante
+win_diagonal_asc(B, P) :-
+    P \= e,
+    between(1, 3, R),
+    between(4, 7, C),
+    square(B, R, C, P),
+    R1 is R + 1, C1 is C - 1,
+    square(B, R1, C1, P),
+    R2 is R + 2, C2 is C - 2,
+    square(B, R2, C2, P),
+    R3 is R + 3, C3 is C - 3,
+    square(B, R3, C3, P).
+
+% Combine toutes les conditions de victoire
+win(B, P) :-
+    P \= e,                        
+    (   win_horizontal(B, P)
+    ;   win_vertical(B, P)
+    ;   win_diagonal_asc(B, P)
+    ;   win_diagonal_desc(B, P)
+    ).
+
 
 
 %.......................................
