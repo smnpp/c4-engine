@@ -29,7 +29,13 @@ test_all :-
     write('=== Test 14: Victoire diagonale ascendante ==='), nl,
     test_win_diagonal_asc, nl,
     write('=== Test 15: Victoire diagonale descendante ==='), nl,
-    test_win_diagonal_desc, nl.
+    test_win_diagonal_desc, nl,
+    write('=== Test 16: Fin de partie - Victoire ==='), nl,
+    test_game_over_victory, nl,
+    write('=== Test 17: Fin de partie - Match nul ==='), nl,
+    test_game_over_draw, nl,
+    write('=== Test 18: Fin de partie - Jeu en cours ==='), nl,
+    test_game_over_continue, nl.
 
 % Test combiné pour les victoires
 test_victory :- 
@@ -42,6 +48,16 @@ test_victory :-
     test_win_diagonal_asc, nl,
     write('Test 4 : Victoire diagonale descendante'), nl,
     test_win_diagonal_desc, nl.
+
+% Test combiné pour game_over
+test_game_over_all :-
+    write('=== Tests de Fin de Partie ==='), nl,
+    write('Test 1 : Fin par Victoire'), nl,
+    test_game_over_victory, nl,
+    write('Test 2 : Fin par Match Nul'), nl,
+    test_game_over_draw, nl,
+    write('Test 3 : Jeu en Cours'), nl,
+    test_game_over_continue, nl.
 
 
 % Test 1: Affichage d un tableau vide
@@ -219,3 +235,47 @@ test_win_diagonal_desc :-
     ;   write('Test Diagonale Descendante : Échoué'), nl).
 
 
+% Test 16 : pour game_over avec une victoire
+test_game_over_victory :-
+    Board = [
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [x, x, x, x, e, e, e]
+    ],
+    output_board(Board),
+    (   game_over(Board, Winner)
+    ->  format('Test Victory: Winner is ~w~n', [Winner])
+    ;   write('Test Victory: Failed'), nl).
+
+% Test 17 : pour game_over avec un match nul
+test_game_over_draw :-
+    Board = [
+        [x, o, x, o, x, o, x],
+        [o, x, o, x, o, x, o],
+        [x, o, x, o, x, o, x],
+        [o, x, o, x, o, x, o],
+        [x, o, x, o, x, o, x],
+        [o, x, o, x, o, x, o]
+    ],
+    output_board(Board),
+    (   game_over(Board, Winner)
+    ->  format('Test Draw: Result is ~w~n', [Winner])
+    ;   write('Test Draw: Failed'), nl).
+
+% Test 18 : pour game_over sans fin de partie
+test_game_over_continue :-
+    Board = [
+        [e, e, e, e, e, e, e],
+        [e, x, e, e, e, e, e],
+        [e, o, e, e, e, e, e],
+        [o, x, e, e, e, e, e],
+        [x, o, e, o, e, e, e],
+        [o, x, x, x, o, e, x]
+    ],
+    output_board(Board),
+    (   game_over(Board, _)
+    ->  write('Test Continue: Failed'), nl
+    ;   write('Test Continue: Passed'), nl).
