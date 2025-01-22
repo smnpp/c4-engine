@@ -206,6 +206,7 @@ human_playing(_) :-
 play(P) :-
     board(B), !,
     output_board(B), !,
+    not(game_over(B, P)), !,
     make_move(P, B), !,
     next_player(P, P2), !,
     play(P2), !
@@ -337,6 +338,24 @@ add_token_row(_, _, _, _, 0) :-
 %.......................................
 % game_over
 %.......................................
+% Vérifie si le jeu est terminé
+% game_over(Board, Winner)
+% - Si un joueur gagne, Winner est défini comme 'x' ou 'o'.
+% - Si le plateau est plein sans vainqueur, Winner est 'draw'.
+% - Si le jeu continue, échoue (pas de solution).
+
+game_over(B, P) :-
+    opponent_mark(P, M),   %%% game is over if opponent wins
+    (   win(B, M)  % Vérifie s il y a un gagnant
+    ->  true
+    ;   board_full(B)   % Vérifie si le plateau est plein
+    ->  P = 'draw'
+    ;   fail            % Sinon, le jeu continue
+    ).
+
+% Vérifie si le plateau est plein (aucune case vide)
+board_full(B) :-
+    \+ (member(Row, B), member(e, Row)).  % Échec si une case vide existe
 
 %.......................................
 % make_move
