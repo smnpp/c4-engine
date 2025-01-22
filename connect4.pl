@@ -314,12 +314,57 @@ add_token_row(_, _, _, _, 0) :-
 % requests next move from human/computer, 
 % then applies that move to the given board
 %
+% make_move(P, B, NB)
+% Gère le tour du joueur P et applique le coup au plateau B, renvoyant le nouveau plateau NB.
+
+make_move(P, B, NB) :-
+    player(P, Type),  % Détermine si le joueur est humain ou ordinateur
+    (Type = human -> request_move(P, B, NB) ; computer_move(P, B, NB)).
+
+% Demande au joueur humain de choisir une colonne et applique le coup
+request_move(P, B, NB) :-
+    nl, write('Player '), write(P), write(', choose a column (1-7): '), nl,
+    read(C),  % Lecture de l entrée utilisateur
+    valid_column(C),  % Vérifie si la colonne est valide
+    player_mark(P, M),  % Récupère le marqueur du joueur ('x' ou 'o')
+    (   move(B, C, M, NB)  % Tente de jouer dans la colonne choisie
+    ->  true
+    ;   write('Invalid move. Column is full or out of range.'), nl,
+        request_move(P, B, NB)  % Redemande si le coup est invalide
+    ).
+
+% Détermine le coup de l ordinateur et applique le coup
+computer_move(P, B, NB) :-
+    nl, write('Computer is thinking...'), nl,
+    player_mark(P, M),
+    find_best_move(B, M, C),  % Trouve la meilleure colonne (implémenter `find_best_move`)
+    (   move(B, C, M, NB)
+    ->  format('Computer plays in column ~w.~n', [C])
+    ;   write('Computer made an invalid move.') % Cas improbable
+    ).
+
+% Vérifie si une colonne est valide (entre 1 et 7)
+valid_column(C) :-
+    integer(C), between(1, 7, C).
+
+% (À implémenter) Détermine la meilleure colonne pour un ordinateur
+find_best_move(B, _, C) :-
+    moves(B, ValidMoves),  % Liste des colonnes jouables
+    random_member(C, ValidMoves).  % Choix aléatoire pour l instant
+
 
 %.......................................
 % moves
 %.......................................
 % retrieves a list of available moves (empty squares) on a board.
-%
+moves(B, ValidMoves) :-
+    findall(C, column_playable(B, C), ValidMoves).
+
+% Vérifie si une colonne C est jouable (contient au moins une case vide)
+column_playable(B, C) :-
+    between(1, 7, C),          % C est une colonne valide (entre 1 et 7)
+    square(B, 1, C, e).        % La première ligne de la colonne est vide
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -404,7 +449,7 @@ output_square2(S, E) :-
     .
 
 output_square2(_, M) :- 
-    write(M), !              %%% if square is marked, output the mark
+    write(M), !              %%% if square is marked, output the mark 
     .
 
 output_value(D,S,U) :-
