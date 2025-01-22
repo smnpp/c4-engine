@@ -21,7 +21,28 @@ test_all :-
     write('=== Test 10: Colonnes jouables sur un plateau vide ==='), nl,
     test_moves_plateau_vide, nl,
     write('=== Test 11: Colonnes jouables après quelques mouvements ==='), nl,
-    test_moves_colonnes_partiellement_remplies, nl.
+    test_moves_colonnes_partiellement_remplies, nl,
+    write('=== Test 12: Victoire horizontale ==='), nl,
+    test_win_horizontal, nl,
+    write('=== Test 13: Victoire verticale ==='), nl,
+    test_win_vertical, nl,
+    write('=== Test 14: Victoire diagonale ascendante ==='), nl,
+    test_win_diagonal_asc, nl,
+    write('=== Test 15: Victoire diagonale descendante ==='), nl,
+    test_win_diagonal_desc, nl.
+
+% Test combiné pour les victoires
+test_victory :- 
+    write('=== Test de Victoires ==='), nl,
+    write('Test 1 : Victoire horizontale'), nl,
+    test_win_horizontal, nl,
+    write('Test 2 : Victoire verticale'), nl,
+    test_win_vertical, nl,
+    write('Test 3 : Victoire diagonale ascendante'), nl,
+    test_win_diagonal_asc, nl,
+    write('Test 4 : Victoire diagonale descendante'), nl,
+    test_win_diagonal_desc, nl.
+
 
 % Test 1: Affichage d un tableau vide
 test_affichage_tableau_vide :-
@@ -136,3 +157,65 @@ test_moves_colonnes_partiellement_remplies :-
     output_board(Board),  % Affiche la matrice initiale
     moves(Board, ValidMoves),  % Détermine les colonnes jouables
     write('Colonnes jouables après quelques mouvements : '), write(ValidMoves), nl.
+
+% Test 12 : victoire horizontale
+test_win_horizontal :-
+    Board = [
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [x, x, x, x, e, e, e]
+    ],
+    output_board(Board),
+    (   win(Board, 'x')
+    ->  write('Test Horizontal : Réussi'), nl
+    ;   write('Test Horizontal : Échoué'), nl).
+
+% Test 13 : victoire verticale
+test_win_vertical :-
+    Board = [
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [x, e, e, e, e, e, e],
+        [x, e, e, e, e, e, e],
+        [x, e, e, e, e, e, e],
+        [x, e, e, e, e, e, e]
+    ],
+    output_board(Board),
+    (   win(Board, 'x')
+    ->  write('Test Vertical : Réussi'), nl
+    ;   write('Test Vertical : Échoué'), nl).
+
+% Test 14 : victoire diagonale ascendante
+test_win_diagonal_asc :-
+    Board = [
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [e, e, e, x, e, e, e],
+        [e, e, x, e, e, e, e],
+        [e, x, e, e, e, e, e],
+        [x, e, e, e, e, e, e]
+    ],
+    output_board(Board),
+    (   win(Board, 'x')
+    ->  write('Test Diagonale Ascendante : Réussi'), nl
+    ;   write('Test Diagonale Ascendante : Échoué'), nl).
+
+% Test 15 : victoire diagonale descendante
+test_win_diagonal_desc :-
+    Board = [
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [e, x, e, e, e, e, e],
+        [e, e, x, e, e, e, e],
+        [e, e, e, x, e, e, e],
+        [e, e, e, e, x, e, e]
+    ],
+    output_board(Board),
+    (   win(Board, 'x')
+    ->  write('Test Diagonale Descendante : Réussi'), nl
+    ;   write('Test Diagonale Descendante : Échoué'), nl).
+
+
