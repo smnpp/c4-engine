@@ -405,15 +405,11 @@ computer_move(P, B, NB) :-
 valid_column(C) :-
     integer(C), between(1, 7, C).
 
-% (À implémenter) Détermine la meilleure colonne pour un ordinateur
-find_best_move(B, _, C) :-
-    moves(B, ValidMoves),  % Liste des colonnes jouables
-    random_member(C, ValidMoves).  % Choix aléatoire pour l instant
-
 
 %.......................................
 % moves
 %.......................................
+
 % retrieves a list of available moves (empty squares) on a board.
 moves(B, ValidMoves) :-
     findall(C, column_playable(B, C), ValidMoves).
@@ -424,10 +420,9 @@ column_playable(B, C) :-
     square(B, 1, C, e).        % La première ligne de la colonne est vide
 
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% OUTPUT
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%.......................................
+% output
+%.......................................
 
 output_players :- 
     nl,
@@ -522,3 +517,136 @@ output_value(D,S,U) :-
 output_value(_,_,_) :- 
     true
     .
+
+%.......................................
+% utility
+%.......................................
+% Calcule l'utilité d'une position pour un joueur donné
+
+utility(B, P, Utility) :-
+    % Vérifie si le joueur P a gagné
+    (   win(B, P) -> Utility = 1000
+    ;   % Vérifie si adversaire a gagné
+        (   opponent_mark(P, Opponent), win(B, Opponent) -> Utility = -1000
+        ;   % Si le plateau est plein (aucune case vide)
+            board_full(B) -> Utility = 0
+            ;   % Sinon, retourne une valeur neutre, 0 (la partie est toujours en cours)
+              Utility = 0
+        )
+    ).
+
+% Define a depth limit for the minimax algorithm
+depth_limit(5).
+
+%.......................................
+% minimax
+%.......................................
+% The minimax algorithm always assumes an optimal opponent.
+% For Connect 4, optimal play will always result in a tie, so the algorithm is effectively playing not-to-lose.
+
+minimax(D, B, M, C, U) :-
+    depth_limit(Limit),
+    D < Limit,  % Check if the current depth is less than the depth limit
+    D2 is D + 1,
+    moves(B, L),          %%% get the list of available moves
+    !,
+    best(D2, B, M, L, C, U),  %%% recursively determine the best available move
+    !.
+
+% if there are no more available moves or depth limit is reached,
+% then the minimax value is the utility of the given board position
+
+minimax(_, B, M, _, U) :-
+    utility(B, M, U).
+
+%.......................................
+% best
+%.......................................
+% determines the best move in a given list of moves by recursively calling minimax
+
+% if there is only one move left in the list...
+
+best(D, B, M, [C1], C, U) :-
+    move(B, C1, M, B2),        %%% apply that move to the board,
+    inverse_mark(M, M2), 
+    !,  
+    minimax(D, B2, M2, _, U),  %%% then recursively search for the utility value of that move.
+    C = C1, !,
+    % output_value(D, C, U),
+    !.
+
+% if there is more than one move in the list...
+
+best(D, B, M, [C1|T], C, U) :-
+    move(B, C1, M, B2),             %%% apply the first move (in the list) to the board,
+    inverse_mark(M, M2), 
+    !,
+    minimax(D, B2, M2, _, U1),      %%% recursively search for the utility value of that move,
+    best(D, B, M, T, C2, U2),       %%% determine the best move of the remaining moves,
+    % output_value(D, C1, U1),      
+    better(D, M, C1, U1, C2, U2, C, U).  %%% and choose the better of the two moves (based on their respective utility values)
+
+%.......................................
+% better
+%.......................................
+% returns the better of two moves based on their respective utility values.
+%
+% if both moves have the same utility value, then one is chosen at random.
+
+better(_, M, C1, U1, _, U2, C, U) :-
+    maximizing(M),                     %%% if the player is maximizing
+    U1 > U2,                           %%% then greater is better.
+    C = C1,
+    U = U1,
+    !.
+
+better(_, M, C1, U1, _, U2, C, U) :-
+    minimizing(M),                     %%% if the player is minimizing,
+    U1 < U2,                           %%% then lesser is better.
+    C = C1,
+    U = U1, 
+    !.
+
+better(_, _, C1, U1, C2, U2, C, U) :-
+    U1 == U2,                          %%% if moves have equal utility,
+    random_between(1, 10, R),          %%% then pick one of them at random
+    better2(R, C1, U1, C2, U2, C, U),
+    !.
+
+better(_, _, _, _, C2, U2, C, U) :-    %%% otherwise, second move is better
+    C = C2,
+    U = U2,
+    !.
+
+%.......................................
+% better2
+%.......................................
+% randomly selects two squares of the same utility value given a single probability
+
+better2(R, C1, U1, _, _, C, U) :-
+    R < 6,
+    C = C1,
+    U = U1, 
+    !.
+
+better2(_, _, _, C2, U2, C, U) :-
+    C = C2,
+    U = U2,
+    !.
+
+%.......................................
+% find_best_move
+%.......................................
+% Determines the best move for the computer using the minimax algorithm
+
+find_best_move(B, M, C) :-
+    moves(B, _),
+    minimax(0, B, M, C, _).
+
+%.......................................
+% random_between
+%.......................................
+% returns a random integer between Low and High (inclusive)
+
+random_int_1n(N, V) :-
+    random_between(1, N, V).
