@@ -635,14 +635,55 @@ better2(_, _, _, C2, U2, C, U) :-
     U = U2,
     !.
 
+% Définir une profondeur maximale pour Alpha-Beta
+depth_limit_alpha_beta(5).
+
+% Fonction principale pour trouver le meilleur coup avec Alpha-Beta
+alphabeta(D, B, M, Alpha, Beta, BestMove, BestScore) :-
+    depth_limit_alpha_beta(Limit),
+    D < Limit,  % Vérifier si la profondeur actuelle est inférieure à la limite
+    D1 is D + 1,
+    moves(B, Moves),  % Récupérer les coups possibles
+    evaluate_moves(D1, B, M, Moves, Alpha, Beta, nil, BestMove, BestScore).
+
+% Si la profondeur limite est atteinte ou si aucun coup n est possible,
+% calculer l utilité du plateau actuel.
+alphabeta(_, B, M, _, _, nil, Score) :-
+    utility(B, M, Score).
+
+% Évaluer les coups possibles en appliquant Alpha-Beta
+evaluate_moves(_, _, _, [], _, _, BestMove, BestMove, BestScore) :-
+    var(BestMove),  % Aucun meilleur coup trouvé
+    BestScore is 0.
+
+evaluate_moves(_, _, _, [], Alpha, _, BestMove, BestMove, Alpha) :- !.
+evaluate_moves(D, B, M, [C|RestMoves], Alpha, Beta, TempMove, BestMove, BestScore) :-
+    move(B, C, M, NextBoard),
+    inverse_mark(M, Opponent),
+    alphabeta(D, NextBoard, Opponent, -Beta, -Alpha, _, OpponentScore),
+    Score is -OpponentScore,
+    (   Score > Alpha
+    ->  NewAlpha = Score,
+        CurrentBestMove = C
+    ;   NewAlpha = Alpha,
+        CurrentBestMove = TempMove
+    ),
+    (   NewAlpha >= Beta
+    ->  BestMove = CurrentBestMove,
+        BestScore = NewAlpha
+    ;   evaluate_moves(D, B, M, RestMoves, NewAlpha, Beta, CurrentBestMove, BestMove, BestScore)
+    ).
+    
+
 %.......................................
 % find_best_move
 %.......................................
 % Determines the best move for the computer using the minimax algorithm
 
 find_best_move(B, M, C) :-
-    moves(B, _),
+    % moves(B, _),
     minimax(0, B, M, C, _).
+    % alphabeta(0, B, M, -10000, 10000, C, _).  % Définir Alpha et Beta initiaux
 
 %.......................................
 % random_between
