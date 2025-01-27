@@ -35,7 +35,11 @@ test_all :-
     write('=== Test 17: Fin de partie - Match nul ==='), nl,
     test_game_over_draw, nl,
     write('=== Test 18: Fin de partie - Jeu en cours ==='), nl,
-    test_game_over_continue, nl.
+    test_game_over_continue, nl,
+    write('=== Test 19: IA gagne au prochain coup ==='), nl,
+    test_ia_win_next_move, nl,
+    write('=== Test 20: IA bloque l adversaire ==='), nl,
+    test_ia_block_opponent, nl.
 
 % Test combiné pour les victoires
 test_victory :- 
@@ -59,6 +63,12 @@ test_game_over_all :-
     write('Test 3 : Jeu en Cours'), nl,
     test_game_over_continue, nl.
 
+% Test combiné pour les comportements de l IA
+test_ia_behavior :-
+    write('=== Test IA Gagne au Prochain Coup ==='), nl,
+    test_ia_win_next_move, nl,
+    write('=== Test IA Bloque l Adversaire ==='), nl,
+    test_ia_block_opponent, nl.
 
 % Test 1: Affichage d un tableau vide
 test_affichage_tableau_vide :-
@@ -279,3 +289,53 @@ test_game_over_continue :-
     (   game_over(Board, _)
     ->  write('Test Continue: Failed'), nl
     ;   write('Test Continue: Passed'), nl).
+
+% Test 19: L IA gagne au prochain coup si elle a déjà trois points alignés
+test_ia_win_next_move :-
+    Board = [
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [o, e, e, e, e, e, e],
+        [x, x, x, e, e, e, e],
+        [o, o, x, o, e, e, o]
+    ],
+    asserta(board(Board)),
+    output_board(Board),
+    asserta(player(1, computer)),
+    asserta(player(2, human)),
+    find_best_move(Board, x, C),  % IA joue pour 'x'
+    move(Board, C, x, NB),
+    output_board(NB),
+    (   C == 4
+    ->  write('Test IA Win Next Move: Passed'), nl
+    ;   write('Test IA Win Next Move: Failed'), nl
+    ),
+    retract(board(_)),
+    retract(player(_, _)).
+
+% Test 20: L IA bloque l adversaire s il a trois points alignés
+test_ia_block_opponent :-
+    Board = [
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [e, e, e, e, e, e, e],
+        [o, e, e, e, e, e, e],
+        [x, x, x, e, e, e, e],
+        [o, o, x, o, e, e, x]
+    ],
+    asserta(board(Board)),
+    output_board(Board),
+    asserta(player(1, computer)),
+    asserta(player(2, human)),
+    find_best_move(Board, o, C),  % IA joue pour 'o'
+    move(Board, C, o, NB),
+    output_board(NB),
+    (   C == 4
+    ->  write('Test IA Block Opponent: Passed'), nl
+    ;   write('Test IA Block Opponent: Failed'), nl
+    ),
+    retract(board(_)),
+    retract(player(_, _)).
+
+
