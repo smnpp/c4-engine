@@ -101,12 +101,11 @@ run :-
 
 hello :-
     initialize,
-%    cls,
     nl,
     nl,
     nl,
     write('Welcome to Connect 4.'),
-    read_players,
+    choose_players_and_ias, % Configure les joueurs et les IA
     output_players
     .
 
@@ -136,6 +135,59 @@ goodbye :-
     !,
     run
     .
+
+%.......................................
+% valid_ia
+%.......................................
+% Vérifie si le choix de l IA est valide
+valid_ia(random).
+valid_ia(minimax).
+valid_ia(alphabeta).
+
+%.......................................
+% invalid_ia_choice
+%.......................................
+% Affiche un message en cas de choix invalide pour l IA
+invalid_ia_choice(IA) :-
+    format('Erreur : "~w" n\'est pas un choix valide. Veuillez choisir entre random, minimax ou alphabeta.', [IA]), nl.
+
+%.......................................
+% choose_players_and_ias
+%.......................................
+% Configure le type de joueurs (humain ou IA) et les IA si nécessaire
+choose_players_and_ias :-
+    write('Combien de joueurs humains ? (0, 1, ou 2) : '), nl,
+    read(NumHumans),
+    (   NumHumans == 2 -> % Deux humains, pas d IA
+        asserta(player(1, human)),
+        asserta(player(2, human)),
+        write('Configuration : Deux joueurs humains.'), nl
+    ;   NumHumans == 1 -> % Un humain, un IA
+        asserta(player(1, human)),
+        write('Configuration : Un joueur humain et un joueur IA.'), nl,
+        choose_ia(2) % Configure l IA pour le joueur 2
+    ;   NumHumans == 0 -> % Deux IA
+        write('Configuration : Deux joueurs IA.'), nl,
+        choose_ia(1), % Configure l IA pour le joueur 1
+        choose_ia(2)
+    ;   % Entrée invalide, redemander
+        write('Erreur : veuillez entrer 0, 1, ou 2.'), nl,
+        choose_players_and_ias
+    ).
+
+%.......................................
+% choose_ia
+%.......................................
+% Permet de choisir l algorithme d IA pour un joueur donné
+choose_ia(Player) :-
+    format('Choisissez l\'IA pour le Joueur ~w (random/minimax/alphabeta) : ', [Player]), nl,
+    read(IA),
+    (   valid_ia(IA)
+    ->  asserta(player(Player, IA))
+    ;   invalid_ia_choice(IA),
+        choose_ia(Player) % Redemande le choix en cas d entrée invalide
+    ).
+
 
 read_play_again(V) :-
     nl,
@@ -375,8 +427,16 @@ make_move(P, B) :-
 
 make_move2(human, P, B, NB) :-
     human_move(P, B, NB).
-make_move2(computer, P, B, NB) :-
-    computer_move(P, B, NB).
+
+make_move2(random, P, B, NB) :-
+    random_move(P, B, NB).
+
+make_move2(minimax, P, B, NB) :-
+    minimax_move(P, B, NB).
+
+make_move2(alphabeta, P, B, NB) :-
+    alphabeta_move(P, B, NB).
+
 
 % Human move
 human_move(P, B, NB) :-
@@ -393,19 +453,38 @@ human_move(P, B, NB) :-
         human_move(P, B, NB)
     ).
 
-% Computer move
-computer_move(P, B, NB) :-
-    nl, write('Computer is thinking...'), nl,
+
+% Effectue un coup aléatoire
+random_move(P, B, NB) :-
+    nl, write('Computer (Random) is thinking...'), nl,
     player_mark(P, M),
-    find_best_move(B, M, C),
+    find_best_move_random(B, M, C),  % Appelle l algorithme aléatoire
     (   move(B, C, M, NB)
-    ->  format('Computer plays in column ~w.~n', [C])
+    ->  format('Computer (Random) plays in column ~w.~n', [C])
     ;   write('Computer made an invalid move.')).
+
+% Effectue un coup avec l algorithme Minimax
+minimax_move(P, B, NB) :-
+    nl, write('Computer (Minimax) is thinking...'), nl,
+    player_mark(P, M),
+    find_best_move_minimax(B, M, C),  % Appelle l algorithme Minimax
+    (   move(B, C, M, NB)
+    ->  format('Computer (Minimax) plays in column ~w.~n', [C])
+    ;   write('Computer made an invalid move.')).
+
+% Effectue un coup avec l algorithme AlphaBeta
+alphabeta_move(P, B, NB) :-
+    nl, write('Computer (AlphaBeta) is thinking...'), nl,
+    player_mark(P, M),
+    find_best_move_alphabeta(B, M, C),  % Appelle l algorithme AlphaBeta
+    (   move(B, C, M, NB)
+    ->  format('Computer (AlphaBeta) plays in column ~w.~n', [C])
+    ;   write('Computer made an invalid move.')).
+
 
 % Vérifie si une colonne est valide (entre 1 et 7)
 valid_column(C) :-
     integer(C), between(1, 7, C).
-
 
 %.......................................
 % moves
@@ -789,21 +868,16 @@ evaluate_moves(D, B, M, [C|RestMoves], Alpha, Beta, TempMove, BestMove, BestScor
     
 
 %.......................................
-% find_best_move
+% find_best_move_minimax
 %.......................................
-% Determines the best move for the computer using the minimax algorithm
-%.......................................
-% find_best_move
-%.......................................
-% Détermine le meilleur coup pour le joueur M en utilisant alphabeta
-find_best_move(B, M, C) :-
+find_best_move_minimax(B, M, C) :-
     % Étape 1 : Vérifier si le joueur M peut gagner au prochain coup
     findall(C1, (move(B, C1, M, NB), win(NB, M)), WinningMoves),
     WinningMoves \= [],  % Si des coups gagnants existent, les jouer immédiatement
     !,
     nth1(1, WinningMoves, C).  % Prend le premier coup gagnant.
 
-find_best_move(B, M, C) :-
+find_best_move_minimax(B, M, C) :-
     % Étape 2 : Vérifier si l adversaire peut gagner au prochain coup
     opponent_mark(M, Opponent),
     findall(C1, (move(B, C1, Opponent, NB), win(NB, Opponent)), Threats),
@@ -811,14 +885,42 @@ find_best_move(B, M, C) :-
     !,
     nth1(1, Threats, C).  % Prend la première menace détectée.
 
-find_best_move(B, M, C) :-
-    % Étape 3 : Sinon, utiliser l algorithme alphabeta
-    alphabeta(0, B, M, -10000, 10000, C, _).  % Définir Alpha et Beta initiaux
+find_best_move_minimax(B, M, C) :-
+    % Étape 3 : Sinon, utiliser l algorithme Minimax
+    minimax(0, B, M, C, _).  % Appelle l algorithme Minimax
+
+%.......................................
+% find_best_move_alphabeta
+%.......................................
+find_best_move_alphabeta(B, M, C) :-
+    % Étape 1 : Vérifier si le joueur M peut gagner au prochain coup
+    findall(C1, (move(B, C1, M, NB), win(NB, M)), WinningMoves),
+    WinningMoves \= [],  % Si des coups gagnants existent, les jouer immédiatement
+    !,
+    nth1(1, WinningMoves, C).  % Prend le premier coup gagnant.
+
+find_best_move_alphabeta(B, M, C) :-
+    % Étape 2 : Vérifier si l adversaire peut gagner au prochain coup
+    opponent_mark(M, Opponent),
+    findall(C1, (move(B, C1, Opponent, NB), win(NB, Opponent)), Threats),
+    Threats \= [],  % Si des menaces existent, choisir une colonne pour bloquer
+    !,
+    nth1(1, Threats, C).  % Prend la première menace détectée.
+
+find_best_move_alphabeta(B, M, C) :-
+    % Étape 3 : Sinon, utiliser l algorithme AlphaBeta
+    alphabeta(0, B, M, -10000, 10000, C, _).  % Appelle l algorithme AlphaBeta
+
+%.......................................
+% find_best_move_random
+%.......................................
+find_best_move_random(_, _, C) :-
+    % utiliser l algorithme random
+    random(7, C). 
 
 %.......................................
 % random_between
 %.......................................
 % returns a random integer between Low and High (inclusive)
-
-random_int_1n(N, V) :-
+random(N, V) :-
     random_between(1, N, V).
