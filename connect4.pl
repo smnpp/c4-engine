@@ -309,6 +309,7 @@ win(B, P) :-
 
 % move applique un coup en ajoutant un jeton dans une colonne donnée
 move(B, C, M, NB) :-
+    column_playable(B, C),
     add_token(B, C, M, NB).
 
 
@@ -521,7 +522,7 @@ output_value(_,_,_) :-
 %.......................................
 % utility
 %.......................................
-% Calcule l'utilité d'une position pour un joueur donné
+% Calcule l utilité d une position pour un joueur donné
 
 utility(B, P, Utility) :-
     % Vérifie si le joueur P a gagné
