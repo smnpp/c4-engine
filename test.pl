@@ -37,13 +37,13 @@ test_all :-
     write('=== Test 18: Fin de partie - Jeu en cours ==='), nl,
     test_game_over_continue, nl,
     write('=== Test 19: IA Minimax gagne au prochain coup ==='), nl,
-    test_ia_win_next_move, nl,
+    test_ia_minimax_win_next_move, nl,
     write('=== Test 20: IA Minimax bloque l adversaire ==='), nl,
-    test_ia_block_opponent, nl,
+    test_ia_minimax_block_opponent, nl,
     write('=== Test 21: IA Alphabeta gagne au prochain coup ==='), nl,
-    test_ia_win_next_move, nl,
+    test_ia_alphabeta_win_next_move, nl,
     write('=== Test 22: IA Alphabeta bloque l adversaire ==='), nl,
-    test_ia_block_opponent, nl.
+    test_ia_alphabeta_block_opponent, nl.
 
 % Test combiné pour les victoires
 test_victory :- 
@@ -157,16 +157,18 @@ test_make_move_human :-
     initialize, board(B),
     asserta(player(1, human)),  % Le joueur 1 est un humain
     write('Test : Tour d\'un joueur humain (choisissez une colonne entre 1 et 7).'), nl,
-    make_move(1, B, NB),  % Appelle la fonction make_move
+    make_move(1, B),  % Appelle la fonction make_move
+    board(NB),
     write('Résultat du plateau après le coup :'), nl,
     output_board(NB).
 
 % Test 9: Joueur Ordinateur Effectuant un Coup
 test_make_move_computer :-
     initialize, board(B),
-    asserta(player(2, computer)),  % Le joueur 2 est un ordinateur
+    asserta(player(2, random)),  % Le joueur 2 est un ordinateur
     write('Test : Tour de l\'ordinateur.'), nl,
-    make_move(2, B, NB),  % Appelle la fonction make_move
+    make_move(2, B),  % Appelle la fonction make_move
+    board(NB),
     write('Résultat du plateau après le coup :'), nl,
     output_board(NB).
 
@@ -310,7 +312,7 @@ test_ia_minimax_win_next_move :-
     ],
     asserta(board(Board)),
     output_board(Board),
-    asserta(player(1, computer)),
+    asserta(player(1, minimax)),
     asserta(player(2, human)),
     find_best_move_minimax(Board, x, C),  % IA joue pour 'x'
     move(Board, C, x, NB),
@@ -334,7 +336,7 @@ test_ia_minimax_block_opponent :-
     ],
     asserta(board(Board)),
     output_board(Board),
-    asserta(player(1, computer)),
+    asserta(player(1, minimax)),
     asserta(player(2, human)),
     find_best_move_minimax(Board, o, C),  % IA joue pour 'o'
     move(Board, C, o, NB),
@@ -359,7 +361,7 @@ test_ia_alphabeta_win_next_move :-
     ],
     asserta(board(Board)),
     output_board(Board),
-    asserta(player(1, computer)),
+    asserta(player(1, alphabeta)),
     asserta(player(2, human)),
     find_best_move_alphabeta(Board, x, C),  % IA joue pour 'x'
     move(Board, C, x, NB),
@@ -383,7 +385,7 @@ test_ia_alphabeta_block_opponent :-
     ],
     asserta(board(Board)),
     output_board(Board),
-    asserta(player(1, computer)),
+    asserta(player(1, alphabeta)),
     asserta(player(2, human)),
     find_best_move_alphabeta(Board, o, C),  % IA joue pour 'o'
     move(Board, C, o, NB),
