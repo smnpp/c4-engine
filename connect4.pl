@@ -611,7 +611,6 @@ utility(B, P, Utility) :-
             (   board_full(B) -> Utility = 0
             ;   % Sinon, calcule une valeur basée sur les alignements
                 alignments_score(B, P, Opponent, Utility)
-                % Utility = 0
             )
         )
     ).
@@ -619,7 +618,7 @@ utility(B, P, Utility) :-
 %.......................................
 % alignments_score
 %.......................................
-% Calcule un score basé sur les alignements partiels
+% Calcule un score basé sur les alignements ouverts et le positionnement stratégique
 alignments_score(B, P, Opponent, Utility) :-
     findall(Score, evaluate_line(B, P, Opponent, Score), Scores),
     sum_list(Scores, Utility).
@@ -629,41 +628,35 @@ alignments_score(B, P, Opponent, Utility) :-
 %.......................................
 % Évalue les lignes, colonnes et diagonales pour attribuer un score
 evaluate_line(B, P, Opponent, Score) :-
-    % Calcule les alignements partiels pour le joueur
+    % Calcule les alignements ouverts pour le joueur
     count_alignments(B, P, 3, MyThrees),
     count_alignments(B, P, 2, MyTwos),
-    % Calcule les alignements partiels pour l adversaire
+    % Calcule les alignements ouverts pour l adversaire
     count_alignments(B, Opponent, 3, OppThrees),
     count_alignments(B, Opponent, 2, OppTwos),
-    % Pondère les scores
-    Score is (10 * MyThrees + MyTwos) - (10 * OppThrees + OppTwos).
+    % Bonus pour le centre
+    center_bonus(B, P, CenterBonus),
+    % Pondération améliorée
+    Score is (50 * MyThrees + 3 * MyTwos + CenterBonus) - (50 * OppThrees + 3 * OppTwos).
 
 %.......................................
 % count_alignments
 %.......................................
-% Compte les alignements de longueur N pour un joueur donné
+% Compte les alignements ouverts de longueur N pour un joueur donné
 count_alignments(B, P, N, Count) :-
-    findall(1, (check_line(B, P, N, R, C, Dir)), Alignments),
+    findall(1, (check_line(B, P, N, _, _, _)), Alignments),
     length(Alignments, Count).
-
 
 %.......................................
 % alignment_free
 %.......................................
-% Vérifie si un alignement est ouvert dans au moins une direction
+% Vérifie si un alignement est ouvert des deux côtés
 alignment_free(B, P, R, C, DR, DC) :-
-    % Vérifie si l alignement est ouvert à l avant
-    Rf is R + DR,
-    Cf is C + DC,
-    square_or_empty(B, Rf, Cf, P),
-    !.
-
-alignment_free(B, P, R, C, DR, DC) :-
-    % Vérifie si l alignement est ouvert à l arrière
-    Rb is R - DR,
-    Cb is C - DC,
-    square_or_empty(B, Rb, Cb, P),
-    !.
+    % Vérifie si l alignement est ouvert à l avant et à l arrière
+    Rf is R + DR, Cf is C + DC,
+    Rb is R - DR, Cb is C - DC,
+    square_or_empty(B, Rf, Cf, P),  % Vérifie l avant
+    square_or_empty(B, Rb, Cb, P).  % Vérifie l arrière
 
 % Vérifie si une case est vide ou contient le jeton du joueur
 square_or_empty(B, R, C, P) :-
@@ -682,7 +675,6 @@ check_line(B, P, N, R, C, Dir) :-
     Length >= N,
     alignment_free(B, P, R, C, DR, DC). % Vérifie si l alignement est ouvert.
 
-
 %.......................................
 % direction_vector
 %.......................................
@@ -691,7 +683,6 @@ direction_vector(horizontal, 0, 1).    % Déplacement horizontal : colonne +1
 direction_vector(vertical, 1, 0).      % Déplacement vertical : ligne +1
 direction_vector(diagonal_up, -1, 1).  % Déplacement diagonale montante : ligne -1, colonne +1
 direction_vector(diagonal_down, 1, 1). % Déplacement diagonale descendante : ligne +1, colonne +1
-
 
 %.......................................
 % line_length
@@ -713,7 +704,6 @@ line_length(B, P, R, C, diagonal_down, Length) :-
 % count_consecutive
 %.......................................
 % Compte le nombre de jetons consécutifs pour un joueur à partir d une case donnée
-
 count_consecutive(_, _, R, C, _, _, 0) :- % Cas d arrêt : hors limites ou case non valide.
     R < 1; R > 6; C < 1; C > 7. % Vérifie si les coordonnées sont hors du plateau.
 
@@ -727,6 +717,13 @@ count_consecutive(B, P, R, C, DR, DC, Count) :-
 count_consecutive(B, P, R, C, _, _, 0) :-
     square(B, R, C, Mark), Mark \= P. % Arrête si la case ne contient pas le jeton du joueur.
 
+%.......................................
+% center_bonus
+%.......................................
+% Ajoute un bonus si un jeton est placé au centre du plateau
+center_bonus(B, P, Bonus) :-
+    findall(5, (between(1, 6, R), square(B, R, 4, P)), Bonuses),
+    sum_list(Bonuses, Bonus).
 
 %.......................................
 % minimax
@@ -756,7 +753,6 @@ minimax(_, B, M, _, U) :-
 % best
 %.......................................
 % determines the best move in a given list of moves by recursively calling minimax
-
 % if there is only one move left in the list...
 
 best(D, B, M, [C1], C, U) :-
@@ -827,6 +823,9 @@ better2(_, _, _, C2, U2, C, U) :-
     U = U2,
     !.
 
+%.......................................
+% alphabeta
+%.......................................
 % Définir une profondeur maximale pour Alpha-Beta
 depth_limit_alpha_beta(5).
 
@@ -865,7 +864,6 @@ evaluate_moves(D, B, M, [C|RestMoves], Alpha, Beta, TempMove, BestMove, BestScor
         BestScore = NewAlpha
     ;   evaluate_moves(D, B, M, RestMoves, NewAlpha, Beta, CurrentBestMove, BestMove, BestScore)
     ).
-    
 
 %.......................................
 % find_best_move_minimax
@@ -917,9 +915,8 @@ find_best_move_alphabeta(B, M, C) :-
 find_best_move_random(_, _, C) :-
     % utiliser l algorithme random
     random(7, C). 
-
 %.......................................
-% random_between
+% random
 %.......................................
 % returns a random integer between Low and High (inclusive)
 random(N, V) :-
