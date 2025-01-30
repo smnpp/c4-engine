@@ -877,7 +877,7 @@ find_best_move_minimax(B, M, C) :-
 
 find_best_move_minimax(B, M, C) :-
     % Étape 2 : Vérifier si l adversaire peut gagner au prochain coup
-    opponent_mark(M, Opponent),
+    inverse_mark(M, Opponent),
     findall(C1, (move(B, C1, Opponent, NB), win(NB, Opponent)), Threats),
     Threats \= [],  % Si des menaces existent, choisir une colonne pour bloquer
     !,
@@ -899,7 +899,7 @@ find_best_move_alphabeta(B, M, C) :-
 
 find_best_move_alphabeta(B, M, C) :-
     % Étape 2 : Vérifier si l adversaire peut gagner au prochain coup
-    opponent_mark(M, Opponent),
+    inverse_mark(M, Opponent),
     findall(C1, (move(B, C1, Opponent, NB), win(NB, Opponent)), Threats),
     Threats \= [],  % Si des menaces existent, choisir une colonne pour bloquer
     !,
