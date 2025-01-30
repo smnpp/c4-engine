@@ -67,7 +67,7 @@ play_stat_turn(Player, B, IA1, IA2, Winner, MoveCount, Moves) :-
     (   game_over(B, Player)  % Vérifier si la partie est terminée
     ->  (   board_full(B)  % Si le plateau est plein, match nul
         ->  Winner = draw
-        ;   (Player == 1 -> Winner = IA1 ; Winner = IA2)  % Convertir Player en IA
+        ;   (Player == 1 -> Winner = IA2 ; Winner = IA1)  % Convertir Player en IA
         ),
         Moves = MoveCount  % Mettre à jour le nombre de coups
     ;   % Sinon, continuer la partie
